@@ -12,8 +12,8 @@ import { z } from "zod";
 const signupSchema = z.object({
   studentId: z
     .string()
-    .length(6, "학번은 6자리여야 합니다")
-    .regex(/^\d{6}$/, "학번은 숫자만 입력 가능합니다"),
+    .length(5, "학번은 5자리여야 합니다")
+    .regex(/^\d{5}$/, "학번은 숫자만 입력 가능합니다"),
   name: z.string().min(2, "이름은 2자 이상이어야 합니다").max(50, "이름은 50자 이하여야 합니다"),
   password: z
     .string()
@@ -115,20 +115,20 @@ export default function Auth() {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="studentId" className="text-sm font-semibold">
-                학번 (6자리)
+                학번 (5자리)
               </Label>
               <Input
                 id="studentId"
                 type="text"
-                placeholder="예: 010101 (1학년 1반 1번)"
-                maxLength={6}
+                placeholder="예: 10101 (1학년 1반 1번)"
+                maxLength={5}
                 value={formData.studentId}
                 onChange={(e) => setFormData({ ...formData, studentId: e.target.value })}
                 required
                 className="h-12 text-lg border-2 focus:border-primary transition-colors"
               />
               <p className="text-xs text-muted-foreground">
-                학년(2자리) + 반(2자리) + 번호(2자리)
+                학년(1자리) + 반(2자리) + 번호(2자리)
               </p>
             </div>
 
