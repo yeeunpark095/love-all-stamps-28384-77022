@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import AdminGuard from "@/components/AdminGuard";
 
 type Zone = "main" | "seogwan";
 type Point = {
@@ -16,6 +17,14 @@ const DEFAULT_BG: Record<Zone, string> = {
 };
 
 export default function MapCalibrator() {
+  return (
+    <AdminGuard>
+      <MapCalibratorContent />
+    </AdminGuard>
+  );
+}
+
+function MapCalibratorContent() {
   const [zone, setZone] = useState<Zone>("main");
   const [bg, setBg] = useState<string>(DEFAULT_BG.main);
   const [points, setPoints] = useState<Point[]>([]);

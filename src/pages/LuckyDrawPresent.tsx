@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import AdminGuard from "@/components/AdminGuard";
 
 interface Winner {
   name: string;
@@ -8,6 +9,14 @@ interface Winner {
 }
 
 export default function LuckyDrawPresent() {
+  return (
+    <AdminGuard>
+      <LuckyDrawPresentContent />
+    </AdminGuard>
+  );
+}
+
+function LuckyDrawPresentContent() {
   const [winners, setWinners] = useState<Winner[]>([]);
   const [index, setIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
