@@ -18,7 +18,6 @@ const signupSchema = z.object({
   password: z
     .string()
     .min(8, "비밀번호는 8자 이상이어야 합니다")
-    .regex(/[A-Z]/, "대문자를 포함해야 합니다")
     .regex(/[a-z]/, "소문자를 포함해야 합니다")
     .regex(/[0-9]/, "숫자를 포함해야 합니다"),
 });
@@ -164,7 +163,7 @@ export default function Auth() {
               />
               {!isLogin && (
                 <p className="text-xs text-muted-foreground">
-                  8자 이상, 대소문자 및 숫자 포함
+                  8자 이상, 소문자 및 숫자 포함
                 </p>
               )}
             </div>
