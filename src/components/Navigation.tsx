@@ -19,9 +19,26 @@ export default function Navigation() {
           .eq("role", "admin")
           .maybeSingle();
         setIsAdmin(!!data);
+      } else {
+        setIsAdmin(false);
       }
     };
+
+    // 초기 체크
     checkAdmin();
+
+    // 인증 상태 변화 감지
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        checkAdmin();
+      } else if (event === 'SIGNED_OUT') {
+        setIsAdmin(false);
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const navItems = [
