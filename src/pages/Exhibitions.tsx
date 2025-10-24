@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import Navigation from "@/components/Navigation";
 import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { MapPin, Info } from "lucide-react";
+import { Info } from "lucide-react";
 
 export default function Exhibitions() {
   const navigate = useNavigate();
@@ -82,7 +82,7 @@ export default function Exhibitions() {
                   
                   {(exhibition.location || exhibition.teacher) && (
                     <div className="flex items-center gap-2 pt-2 border-t border-border/50">
-                      <MapPin className="w-4 h-4 text-primary flex-shrink-0" />
+                      <span className="text-lg">👩‍🏫</span>
                       <p className="text-xs text-muted-foreground truncate">
                         {exhibition.location && <span>{exhibition.location}</span>}
                         {exhibition.location && exhibition.teacher && <span> · </span>}
@@ -136,7 +136,7 @@ export default function Exhibitions() {
               
               {(selectedExhibition.location || selectedExhibition.teacher) && (
                 <div className="flex items-start gap-2 p-4 bg-muted/30 rounded-lg">
-                  <MapPin className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+                  <span className="text-2xl">👩‍🏫</span>
                   <div className="text-sm space-y-1">
                     {selectedExhibition.location && (
                       <p>
