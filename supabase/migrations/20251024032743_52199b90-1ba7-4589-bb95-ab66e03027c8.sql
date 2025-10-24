@@ -1,0 +1,1 @@
+DELETE FROM exhibitions WHERE club = '융합과학STEAM주제연구반';
