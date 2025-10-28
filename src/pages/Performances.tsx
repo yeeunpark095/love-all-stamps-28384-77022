@@ -94,10 +94,6 @@ export default function Performances() {
                         <Users className="w-4 h-4 text-muted-foreground" />
                         <span className="text-muted-foreground">{perf.team}</span>
                       </span>
-                      <span className="flex items-center gap-1">
-                        <MapPin className="w-4 h-4 text-primary" />
-                        <span className="text-foreground font-medium">📍강당</span>
-                      </span>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
