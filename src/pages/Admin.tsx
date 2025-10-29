@@ -5,8 +5,27 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Users, Trophy, Stamp, TrendingUp, Search, Download, BarChart3, Eye, EyeOff, Copy } from "lucide-react";
+import { Loader2, Users, Trophy, Stamp, TrendingUp, Search, Download, BarChart3, Eye, EyeOff, Copy, Pencil, Trash2 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface Booth {
   booth_id: number;
@@ -51,6 +70,10 @@ export default function Admin() {
   const [totalParticipants, setTotalParticipants] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
   const [visiblePins, setVisiblePins] = useState<Set<number>>(new Set());
+  const [editingParticipant, setEditingParticipant] = useState<Participant | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editStudentId, setEditStudentId] = useState("");
+  const [deletingParticipantId, setDeletingParticipantId] = useState<string | null>(null);
   const { toast } = useToast();
 
   const loadBooths = async () => {
@@ -352,6 +375,105 @@ export default function Admin() {
         variant: "destructive",
         title: "복사 실패",
         description: "PIN 복사에 실패했습니다.",
+      });
+    }
+  };
+
+  const openEditDialog = (participant: Participant) => {
+    setEditingParticipant(participant);
+    setEditName(participant.name);
+    setEditStudentId(participant.student_id);
+  };
+
+  const handleUpdateParticipant = async () => {
+    if (!editingParticipant) return;
+
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({
+          name: editName,
+          student_id: editStudentId,
+        })
+        .eq("id", editingParticipant.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "수정 완료",
+        description: "참가자 정보가 수정되었습니다.",
+      });
+
+      await loadParticipants();
+      setEditingParticipant(null);
+    } catch (error) {
+      console.error("Error updating participant:", error);
+      toast({
+        variant: "destructive",
+        title: "오류",
+        description: "참가자 정보 수정에 실패했습니다.",
+      });
+    }
+  };
+
+  const handleDeleteParticipant = async () => {
+    if (!deletingParticipantId) return;
+
+    try {
+      // Delete related stamps first
+      const { error: stampError } = await supabase
+        .from("stamp_logs")
+        .delete()
+        .eq("user_id", deletingParticipantId);
+
+      if (stampError) throw stampError;
+
+      // Delete lucky draw entries
+      const { error: luckyDrawError } = await supabase
+        .from("lucky_draw_entries")
+        .delete()
+        .eq("user_id", deletingParticipantId);
+
+      if (luckyDrawError) throw luckyDrawError;
+
+      // Delete lucky draw tickets
+      const { error: ticketsError } = await supabase
+        .from("lucky_draw_tickets")
+        .delete()
+        .eq("user_id", deletingParticipantId);
+
+      if (ticketsError) throw ticketsError;
+
+      // Delete user roles
+      const { error: rolesError } = await supabase
+        .from("user_roles")
+        .delete()
+        .eq("user_id", deletingParticipantId);
+
+      if (rolesError) throw rolesError;
+
+      // Delete profile
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .delete()
+        .eq("id", deletingParticipantId);
+
+      if (profileError) throw profileError;
+
+      toast({
+        title: "삭제 완료",
+        description: "참가자가 삭제되었습니다.",
+      });
+
+      await loadParticipants();
+      await loadLuckyDraw();
+      setDeletingParticipantId(null);
+    } catch (error) {
+      console.error("Error deleting participant:", error);
+      toast({
+        variant: "destructive",
+        title: "오류",
+        description: "참가자 삭제에 실패했습니다.",
       });
     }
   };
@@ -689,6 +811,7 @@ export default function Admin() {
                           <th className="px-4 py-3 text-center">스탬프</th>
                           <th className="px-4 py-3 text-center">진행률</th>
                           <th className="px-4 py-3 text-center">상태</th>
+                          <th className="px-4 py-3 text-center">관리</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -729,6 +852,26 @@ export default function Admin() {
                                     진행중
                                   </span>
                                 )}
+                              </td>
+                              <td className="px-4 py-3">
+                                <div className="flex justify-center gap-2">
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => openEditDialog(p)}
+                                    className="h-8 w-8 p-0"
+                                  >
+                                    <Pencil className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => setDeletingParticipantId(p.id)}
+                                    className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
                               </td>
                             </tr>
                           );
@@ -1058,6 +1201,64 @@ export default function Admin() {
             </TabsContent>
           </Tabs>
         </div>
+
+        {/* 참가자 수정 다이얼로그 */}
+        <Dialog open={editingParticipant !== null} onOpenChange={() => setEditingParticipant(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>참가자 정보 수정</DialogTitle>
+              <DialogDescription>
+                참가자의 이름과 학번을 수정할 수 있습니다.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-name">이름</Label>
+                <Input
+                  id="edit-name"
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  placeholder="이름을 입력하세요"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-student-id">학번</Label>
+                <Input
+                  id="edit-student-id"
+                  value={editStudentId}
+                  onChange={(e) => setEditStudentId(e.target.value)}
+                  placeholder="학번을 입력하세요"
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setEditingParticipant(null)}>
+                취소
+              </Button>
+              <Button onClick={handleUpdateParticipant}>
+                저장
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* 참가자 삭제 확인 다이얼로그 */}
+        <AlertDialog open={deletingParticipantId !== null} onOpenChange={() => setDeletingParticipantId(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>참가자 삭제</AlertDialogTitle>
+              <AlertDialogDescription>
+                정말로 이 참가자를 삭제하시겠습니까? 이 작업은 되돌릴 수 없으며, 관련된 모든 데이터(스탬프, 추첨 정보 등)가 함께 삭제됩니다.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>취소</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDeleteParticipant} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                삭제
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </AdminGuard>
   );
