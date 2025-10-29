@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Users, Trophy, Stamp, TrendingUp, Search, Download, BarChart3 } from "lucide-react";
+import { Loader2, Users, Trophy, Stamp, TrendingUp, Search, Download, BarChart3, Eye, EyeOff, Copy } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface Booth {
@@ -50,6 +50,7 @@ export default function Admin() {
   const [boothStats, setBoothStats] = useState<BoothStats[]>([]);
   const [totalParticipants, setTotalParticipants] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
+  const [visiblePins, setVisiblePins] = useState<Set<number>>(new Set());
   const { toast } = useToast();
 
   const loadBooths = async () => {
@@ -317,6 +318,42 @@ export default function Admin() {
       title: "CSV 내보내기 완료",
       description: "부스 통계가 다운로드되었습니다.",
     });
+  };
+
+  const togglePinVisibility = (boothId: number) => {
+    setVisiblePins((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(boothId)) {
+        newSet.delete(boothId);
+      } else {
+        newSet.add(boothId);
+        // 3초 후 자동 숨김
+        setTimeout(() => {
+          setVisiblePins((current) => {
+            const updated = new Set(current);
+            updated.delete(boothId);
+            return updated;
+          });
+        }, 3000);
+      }
+      return newSet;
+    });
+  };
+
+  const copyPinToClipboard = async (pin: string, boothName: string) => {
+    try {
+      await navigator.clipboard.writeText(pin);
+      toast({
+        title: "복사 완료",
+        description: `${boothName}의 PIN이 클립보드에 복사되었습니다.`,
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "복사 실패",
+        description: "PIN 복사에 실패했습니다.",
+      });
+    }
   };
 
   const eligibleCount = eligible.length;
@@ -726,34 +763,61 @@ export default function Admin() {
                         </tr>
                       </thead>
                       <tbody>
-                        {booths.map((booth) => (
-                          <tr key={booth.booth_id} className="border-t">
-                            <td className="px-4 py-2">{booth.booth_id}</td>
-                            <td className="px-4 py-2">{booth.name}</td>
-                            <td className="px-4 py-2">{booth.location || "-"}</td>
-                            <td className="px-4 py-2">{booth.teacher || "-"}</td>
-                            <td className="px-4 py-2 font-mono font-bold text-lg">
-                              {booth.staff_pin}
-                            </td>
-                            <td className="px-4 py-2">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => rotatePin(booth.booth_id)}
-                                disabled={rotatingPin === booth.booth_id}
-                              >
-                                {rotatingPin === booth.booth_id ? (
-                                  <>
-                                    <Loader2 className="mr-2 h-3 w-3 animate-spin" />
-                                    재발급 중...
-                                  </>
-                                ) : (
-                                  "PIN 재발급"
-                                )}
-                              </Button>
-                            </td>
-                          </tr>
-                        ))}
+                        {booths.map((booth) => {
+                          const isPinVisible = visiblePins.has(booth.booth_id);
+                          return (
+                            <tr key={booth.booth_id} className="border-t">
+                              <td className="px-4 py-2">{booth.booth_id}</td>
+                              <td className="px-4 py-2">{booth.name}</td>
+                              <td className="px-4 py-2">{booth.location || "-"}</td>
+                              <td className="px-4 py-2">{booth.teacher || "-"}</td>
+                              <td className="px-4 py-2">
+                                <div className="flex items-center gap-2">
+                                  <span className={`font-mono font-bold text-lg ${isPinVisible ? "text-primary" : ""}`}>
+                                    {isPinVisible ? booth.staff_pin : "••••••"}
+                                  </span>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => togglePinVisibility(booth.booth_id)}
+                                    className="h-8 w-8 p-0"
+                                  >
+                                    {isPinVisible ? (
+                                      <EyeOff className="h-4 w-4" />
+                                    ) : (
+                                      <Eye className="h-4 w-4" />
+                                    )}
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => copyPinToClipboard(booth.staff_pin, booth.name)}
+                                    className="h-8 w-8 p-0"
+                                  >
+                                    <Copy className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </td>
+                              <td className="px-4 py-2">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => rotatePin(booth.booth_id)}
+                                  disabled={rotatingPin === booth.booth_id}
+                                >
+                                  {rotatingPin === booth.booth_id ? (
+                                    <>
+                                      <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                                      재발급 중...
+                                    </>
+                                  ) : (
+                                    "PIN 재발급"
+                                  )}
+                                </Button>
+                              </td>
+                            </tr>
+                          );
+                        })}
                       </tbody>
                     </table>
                   </div>

@@ -156,6 +156,11 @@ export default function BoothMapPage() {
       <div className="bg-gradient-to-r from-primary via-secondary to-accent p-6 text-center shadow-lg">
         <h1 className="text-3xl font-bold text-white mb-2">🗺️ 성덕제 부스 배치도</h1>
         <p className="text-white/90 text-sm">클릭해서 스탬프를 모아보세요!</p>
+        <div className="mt-3 px-4 py-2 bg-white/20 backdrop-blur-sm rounded-lg inline-block">
+          <p className="text-white/95 text-xs">
+            ⓘ 이 지도는 시각적 안내용입니다. 실제 스탬프 수집은 '스탬프' 페이지에서 진행됩니다.
+          </p>
+        </div>
       </div>
 
       <div className="max-w-6xl mx-auto px-4 py-6">

@@ -137,7 +137,7 @@ export default function StampBoardPage() {
     <div className="min-h-screen bg-gradient-to-br from-background via-secondary/5 to-accent/5 px-4 py-6">
       <Toaster />
       <div className="max-w-6xl mx-auto">
-        <header className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-6">
+        <header className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
           <h1 className="text-2xl font-extrabold">{TITLE}</h1>
           <div className="flex items-center gap-3 w-full md:w-auto">
             <ProgressBar current={stamped.length} total={total} />
@@ -149,6 +149,12 @@ export default function StampBoardPage() {
             </button>
           </div>
         </header>
+
+        <div className="mb-6 p-3 bg-muted/50 border border-border rounded-lg">
+          <p className="text-sm text-muted-foreground text-center">
+            ⓘ 이 도장판은 시각적 안내용입니다. 실제 스탬프 수집은 '스탬프' 페이지에서 진행됩니다.
+          </p>
+        </div>
 
         {/* 도장판 그리드 */}
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
