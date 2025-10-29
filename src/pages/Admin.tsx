@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Users, Trophy, Stamp, TrendingUp, Search, Download, BarChart3, Eye, EyeOff, Copy, Pencil, Trash2 } from "lucide-react";
+import { Loader2, Users, Trophy, Stamp, TrendingUp, Search, Download, BarChart3, Eye, EyeOff, Copy, Pencil, Trash2, KeyRound } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
@@ -74,6 +74,9 @@ export default function Admin() {
   const [editName, setEditName] = useState("");
   const [editStudentId, setEditStudentId] = useState("");
   const [deletingParticipantId, setDeletingParticipantId] = useState<string | null>(null);
+  const [resettingPasswordId, setResettingPasswordId] = useState<string | null>(null);
+  const [newPassword, setNewPassword] = useState("");
+  const [resetLoading, setResetLoading] = useState(false);
   const { toast } = useToast();
 
   const loadBooths = async () => {
@@ -478,6 +481,70 @@ export default function Admin() {
     }
   };
 
+  const openResetPasswordDialog = (participantId: string) => {
+    setResettingPasswordId(participantId);
+    setNewPassword("");
+  };
+
+  const handleResetPassword = async () => {
+    if (!resettingPasswordId || !newPassword) return;
+
+    if (newPassword.length < 6) {
+      toast({
+        variant: "destructive",
+        title: "오류",
+        description: "비밀번호는 최소 6자 이상이어야 합니다.",
+      });
+      return;
+    }
+
+    setResetLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error("Not authenticated");
+      }
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-reset-password`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            userId: resettingPasswordId,
+            newPassword: newPassword,
+          }),
+        }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || "Failed to reset password");
+      }
+
+      toast({
+        title: "비밀번호 재발급 완료",
+        description: "새 비밀번호가 설정되었습니다.",
+      });
+
+      setResettingPasswordId(null);
+      setNewPassword("");
+    } catch (error: any) {
+      console.error("Error resetting password:", error);
+      toast({
+        variant: "destructive",
+        title: "오류",
+        description: error.message || "비밀번호 재발급에 실패했습니다.",
+      });
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
   const eligibleCount = eligible.length;
   const winnerCount = winners.length;
   const completedCount = participants.filter((p) => p.stamp_count >= 20).length;
@@ -860,14 +927,25 @@ export default function Admin() {
                                     variant="ghost"
                                     onClick={() => openEditDialog(p)}
                                     className="h-8 w-8 p-0"
+                                    title="정보 수정"
                                   >
                                     <Pencil className="h-4 w-4" />
                                   </Button>
                                   <Button
                                     size="sm"
                                     variant="ghost"
+                                    onClick={() => openResetPasswordDialog(p.id)}
+                                    className="h-8 w-8 p-0"
+                                    title="비밀번호 재발급"
+                                  >
+                                    <KeyRound className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
                                     onClick={() => setDeletingParticipantId(p.id)}
                                     className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                                    title="삭제"
                                   >
                                     <Trash2 className="h-4 w-4" />
                                   </Button>
@@ -1259,6 +1337,49 @@ export default function Admin() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        {/* 비밀번호 재발급 다이얼로그 */}
+        <Dialog open={resettingPasswordId !== null} onOpenChange={() => setResettingPasswordId(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>비밀번호 재발급</DialogTitle>
+              <DialogDescription>
+                참가자의 새로운 비밀번호를 설정하세요. (최소 6자)
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="new-password">새 비밀번호</Label>
+                <Input
+                  id="new-password"
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="새 비밀번호를 입력하세요"
+                  autoComplete="new-password"
+                />
+                <p className="text-xs text-muted-foreground">
+                  비밀번호는 최소 6자 이상이어야 합니다.
+                </p>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setResettingPasswordId(null)} disabled={resetLoading}>
+                취소
+              </Button>
+              <Button onClick={handleResetPassword} disabled={resetLoading || !newPassword}>
+                {resetLoading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    재발급 중...
+                  </>
+                ) : (
+                  "재발급"
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </AdminGuard>
   );
