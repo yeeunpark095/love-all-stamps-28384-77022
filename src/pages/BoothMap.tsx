@@ -1,9 +1,12 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { motion } from "framer-motion";
 import toast, { Toaster } from "react-hot-toast";
 import Confetti from "react-confetti";
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
+import { Search, X } from "lucide-react";
 import Navigation from "@/components/Navigation";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 type Zone = "main" | "seogwan";
 type Booth = { id: number; name: string; emoji: string; x: number; y: number; zone: Zone };
@@ -48,7 +51,17 @@ function usePersistentStamps() {
   return { stamped, setStamped };
 }
 
-function BoothPin({ booth, stamped, onStamp }: { booth: Booth; stamped: number[]; onStamp: (b: Booth) => void }) {
+function BoothPin({ 
+  booth, 
+  stamped, 
+  onStamp, 
+  highlighted 
+}: { 
+  booth: Booth; 
+  stamped: number[]; 
+  onStamp: (b: Booth) => void;
+  highlighted: boolean;
+}) {
   const done = stamped.includes(booth.id);
   const sizeRem = 2.1;
   return (
@@ -63,18 +76,54 @@ function BoothPin({ booth, stamped, onStamp }: { booth: Booth; stamped: number[]
       aria-label={booth.name}
       title={`${booth.name} (${booth.x.toFixed(1)}%, ${booth.y.toFixed(1)}%)`}
     >
+      {highlighted && (
+        <motion.div
+          className="absolute inset-0 rounded-full"
+          animate={{
+            scale: [1, 1.8, 1],
+            opacity: [0.8, 0, 0.8],
+          }}
+          transition={{
+            duration: 2,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+          style={{
+            background: "radial-gradient(circle, rgba(239, 68, 68, 0.6) 0%, transparent 70%)",
+            width: `${sizeRem * 3}rem`,
+            height: `${sizeRem * 3}rem`,
+            left: "50%",
+            top: "50%",
+            transform: "translate(-50%, -50%)",
+            pointerEvents: "none",
+          }}
+        />
+      )}
       {done ? (
         <motion.div
           initial={{ scale: 3, opacity: 0, rotate: -10 }}
-          animate={{ scale: 1, opacity: 1, rotate: 0 }}
-          transition={{ duration: 0.28 }}
-          className="text-red-600 font-extrabold drop-shadow"
-          style={{ fontSize: `${sizeRem + 1}rem` }}
+          animate={{ scale: highlighted ? [1, 1.3, 1] : 1, opacity: 1, rotate: 0 }}
+          transition={{ duration: highlighted ? 1.5 : 0.28, repeat: highlighted ? Infinity : 0 }}
+          className="text-red-600 font-extrabold drop-shadow relative z-10"
+          style={{ 
+            fontSize: `${sizeRem + (highlighted ? 0.5 : 1)}rem`,
+            filter: highlighted ? "drop-shadow(0 0 8px rgba(239, 68, 68, 0.8))" : undefined,
+          }}
         >
           💮
         </motion.div>
       ) : (
-        <motion.span whileHover={{ scale: 1.2 }} whileTap={{ scale: 0.92 }} style={{ fontSize: `${sizeRem}rem` }}>
+        <motion.span 
+          whileHover={{ scale: 1.2 }} 
+          whileTap={{ scale: 0.92 }}
+          animate={highlighted ? { scale: [1, 1.4, 1] } : {}}
+          transition={highlighted ? { duration: 1.5, repeat: Infinity } : {}}
+          className="relative z-10"
+          style={{ 
+            fontSize: `${sizeRem + (highlighted ? 0.3 : 0)}rem`,
+            filter: highlighted ? "drop-shadow(0 0 8px rgba(234, 179, 8, 0.8))" : undefined,
+          }}
+        >
           {booth.emoji}
         </motion.span>
       )}
@@ -88,6 +137,8 @@ function MapBlock({
   zone,
   stamped,
   onStamp,
+  highlightedId,
+  sectionRef,
   height = 640,
   baseWidth = 1100,
 }: {
@@ -96,12 +147,14 @@ function MapBlock({
   zone: Zone;
   stamped: number[];
   onStamp: (b: Booth) => void;
+  highlightedId: number | null;
+  sectionRef?: React.RefObject<HTMLDivElement>;
   height?: number;
   baseWidth?: number;
 }) {
   const booths = useMemo(() => BOOTHS.filter((b) => b.zone === zone), [zone]);
   return (
-    <section className="mb-8">
+    <section className="mb-8" ref={sectionRef}>
       <div className="flex items-center justify-between mb-2">
         <h2 className="text-lg font-bold">{title}</h2>
         <span className="text-xs text-muted-foreground">핀치 제스처로 확대/축소 가능</span>
@@ -114,7 +167,13 @@ function MapBlock({
               style={{ width: `${baseWidth}px`, height: `${height}px`, backgroundImage: `url(${bgUrl})` }}
             >
               {booths.map((b) => (
-                <BoothPin key={b.id} booth={b} stamped={stamped} onStamp={onStamp} />
+                <BoothPin 
+                  key={b.id} 
+                  booth={b} 
+                  stamped={stamped} 
+                  onStamp={onStamp}
+                  highlighted={b.id === highlightedId}
+                />
               ))}
             </div>
           </TransformComponent>
@@ -127,6 +186,10 @@ function MapBlock({
 export default function BoothMapPage() {
   const { stamped, setStamped } = usePersistentStamps();
   const [confetti, setConfetti] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [highlightedBooth, setHighlightedBooth] = useState<Booth | null>(null);
+  const mainMapRef = useRef<HTMLDivElement>(null);
+  const seogwanMapRef = useRef<HTMLDivElement>(null);
 
   const onStamp = (b: Booth) => {
     if (stamped.includes(b.id)) {
@@ -149,6 +212,37 @@ export default function BoothMapPage() {
     setStamped([]);
   };
 
+  const handleSearch = () => {
+    if (!searchQuery.trim()) {
+      setHighlightedBooth(null);
+      toast.error("검색어를 입력해주세요");
+      return;
+    }
+
+    const found = BOOTHS.find((b) => 
+      b.name.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
+    if (found) {
+      setHighlightedBooth(found);
+      toast.success(`${found.name} 부스를 찾았습니다! 🎯`);
+      
+      // 해당 구역으로 스크롤
+      const targetRef = found.zone === "main" ? mainMapRef : seogwanMapRef;
+      setTimeout(() => {
+        targetRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 100);
+    } else {
+      setHighlightedBooth(null);
+      toast.error("해당 부스를 찾을 수 없습니다");
+    }
+  };
+
+  const clearSearch = () => {
+    setSearchQuery("");
+    setHighlightedBooth(null);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-secondary/5 to-accent/5 pb-24">
       <Toaster position="top-center" />
@@ -164,6 +258,41 @@ export default function BoothMapPage() {
       </div>
 
       <div className="max-w-6xl mx-auto px-4 py-6">
+        {/* 검색 바 */}
+        <div className="mb-6 bg-card/80 backdrop-blur-sm border rounded-xl p-4 shadow-sm">
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="부스 이름으로 검색..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                className="pl-10 pr-10"
+              />
+              {searchQuery && (
+                <button
+                  onClick={clearSearch}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+            <Button onClick={handleSearch} size="default">
+              찾기
+            </Button>
+          </div>
+          {highlightedBooth && (
+            <div className="mt-3 text-sm text-muted-foreground flex items-center gap-2">
+              <span className="text-xl">{highlightedBooth.emoji}</span>
+              <span>
+                <strong className="text-foreground">{highlightedBooth.name}</strong> - {highlightedBooth.zone === "main" ? "본관 · 운동장 구역" : "서관존"}
+              </span>
+            </div>
+          )}
+        </div>
+
         <div className="flex items-center justify-between mb-4">
           <div className="text-sm text-muted-foreground">
             진행률: <span className="font-bold text-foreground">{stamped.length}</span> / {TOTAL}
@@ -176,8 +305,26 @@ export default function BoothMapPage() {
           </button>
         </div>
 
-        <MapBlock title="본관 · 운동장 구역" bgUrl="/booth-main.png" zone="main" stamped={stamped} onStamp={onStamp} />
-        <MapBlock title="서관존" bgUrl="/booth-seogwan.png" zone="seogwan" stamped={stamped} onStamp={onStamp} height={700} baseWidth={520} />
+        <MapBlock 
+          title="본관 · 운동장 구역" 
+          bgUrl="/booth-main.png" 
+          zone="main" 
+          stamped={stamped} 
+          onStamp={onStamp}
+          highlightedId={highlightedBooth?.id || null}
+          sectionRef={mainMapRef}
+        />
+        <MapBlock 
+          title="서관존" 
+          bgUrl="/booth-seogwan.png" 
+          zone="seogwan" 
+          stamped={stamped} 
+          onStamp={onStamp}
+          highlightedId={highlightedBooth?.id || null}
+          sectionRef={seogwanMapRef}
+          height={700} 
+          baseWidth={520}
+        />
 
         {/* 플로팅 진행률 */}
         <div className="fixed bottom-20 right-4 bg-card/95 backdrop-blur px-4 py-2 rounded-xl text-sm font-semibold shadow-lg border">
