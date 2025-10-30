@@ -22,6 +22,7 @@ export default function Exhibitions() {
       const { data } = await supabase
         .from("exhibitions")
         .select("*")
+        .neq('club', 'STEAM사회참여반')
         .order("exhibition_id");
       setExhibitions(data || []);
     };
