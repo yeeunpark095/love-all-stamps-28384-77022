@@ -45,14 +45,12 @@ function LuckyDrawPresentContent() {
     if (!isPlaying || winners.length === 0 || revealedCount >= Math.min(5, winners.length)) return;
     const timer = setInterval(() => {
       if (showDrumroll) {
-        // 드럼롤 중이면 당첨자 공개
+        // 드럼롤 중이면 첫 당첨자 공개
         setShowDrumroll(false);
-        setRevealedCount(prev => prev + 1);
+        setRevealedCount(1);
       } else {
-        // 당첨자 공개 중이면 다음 당첨자 드럼롤
-        if (revealedCount < Math.min(5, winners.length)) {
-          setShowDrumroll(true);
-        }
+        // 이후에는 드럼롤 없이 다음 당첨자 공개
+        setRevealedCount(prev => prev + 1);
       }
     }, 3000);
     return () => clearInterval(timer);
@@ -60,13 +58,13 @@ function LuckyDrawPresentContent() {
 
   const handleNext = () => {
     if (showDrumroll) {
-      // 드럼롤 상태에서 다음 버튼 클릭 -> 당첨자 공개
+      // 드럼롤 상태에서 다음 버튼 클릭 -> 첫 당첨자 공개
       setShowDrumroll(false);
-      setRevealedCount(prev => prev + 1);
+      setRevealedCount(1);
     } else {
-      // 당첨자 공개 상태에서 다음 버튼 클릭 -> 다음 당첨자 드럼롤
+      // 이후에는 드럼롤 없이 다음 당첨자 공개
       if (revealedCount < Math.min(5, winners.length)) {
-        setShowDrumroll(true);
+        setRevealedCount(prev => prev + 1);
       }
     }
   };
