@@ -42,27 +42,31 @@ function LuckyDrawPresentContent() {
   useEffect(() => {
     if (!isPlaying || winners.length === 0) return;
     const timer = setInterval(() => {
-      setShowDrumroll(true);
-      setRevealWinner(false);
-      
-      setTimeout(() => {
+      if (showDrumroll) {
+        // 드럼롤 중이면 당첨자 공개
         setShowDrumroll(false);
         setRevealWinner(true);
+      } else {
+        // 당첨자 공개 중이면 다음 당첨자 드럼롤
         setIndex((i) => (i + 1) % winners.length);
-      }, 2000);
-    }, 6000);
+        setShowDrumroll(true);
+        setRevealWinner(false);
+      }
+    }, 3000);
     return () => clearInterval(timer);
-  }, [isPlaying, winners]);
+  }, [isPlaying, winners, showDrumroll]);
 
   const handleNext = () => {
-    setShowDrumroll(true);
-    setRevealWinner(false);
-    
-    setTimeout(() => {
+    if (showDrumroll) {
+      // 드럼롤 상태에서 다음 버튼 클릭 -> 당첨자 공개
       setShowDrumroll(false);
       setRevealWinner(true);
+    } else {
+      // 당첨자 공개 상태에서 다음 버튼 클릭 -> 다음 당첨자 드럼롤
       setIndex((i) => (i + 1) % winners.length);
-    }, 2000);
+      setShowDrumroll(true);
+      setRevealWinner(false);
+    }
   };
 
   if (!winners.length)
@@ -115,7 +119,6 @@ function LuckyDrawPresentContent() {
           onClick={() => setIsPlaying(!isPlaying)}
           className="px-8 py-6 text-2xl rounded-xl"
           size="lg"
-          disabled={showDrumroll}
         >
           {isPlaying ? "⏸ 일시정지" : "▶ 자동 발표"}
         </Button>
@@ -124,9 +127,8 @@ function LuckyDrawPresentContent() {
           variant="secondary"
           className="px-8 py-6 text-2xl rounded-xl"
           size="lg"
-          disabled={showDrumroll}
         >
-          ➡ 다음
+          ➡ {showDrumroll ? "공개" : "다음"}
         </Button>
       </div>
 
