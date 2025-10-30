@@ -20,6 +20,8 @@ function LuckyDrawPresentContent() {
   const [winners, setWinners] = useState<Winner[]>([]);
   const [index, setIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [showDrumroll, setShowDrumroll] = useState(true);
+  const [revealWinner, setRevealWinner] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -36,10 +38,28 @@ function LuckyDrawPresentContent() {
   useEffect(() => {
     if (!isPlaying || winners.length === 0) return;
     const timer = setInterval(() => {
-      setIndex((i) => (i + 1) % winners.length);
-    }, 4000);
+      setShowDrumroll(true);
+      setRevealWinner(false);
+      
+      setTimeout(() => {
+        setShowDrumroll(false);
+        setRevealWinner(true);
+        setIndex((i) => (i + 1) % winners.length);
+      }, 2000);
+    }, 6000);
     return () => clearInterval(timer);
   }, [isPlaying, winners]);
+
+  const handleNext = () => {
+    setShowDrumroll(true);
+    setRevealWinner(false);
+    
+    setTimeout(() => {
+      setShowDrumroll(false);
+      setRevealWinner(true);
+      setIndex((i) => (i + 1) % winners.length);
+    }, 2000);
+  };
 
   if (!winners.length)
     return (
@@ -52,7 +72,7 @@ function LuckyDrawPresentContent() {
 
   return (
     <div
-      className="h-screen w-screen flex flex-col items-center justify-center bg-gradient-to-br from-pink-100 to-pink-300 text-center transition-all duration-800"
+      className="h-screen w-screen flex flex-col items-center justify-center bg-gradient-to-br from-pink-100 to-pink-300 text-center relative overflow-hidden"
       style={{
         fontFamily: "Pretendard, sans-serif",
       }}
@@ -61,27 +81,46 @@ function LuckyDrawPresentContent() {
         🎉 성덕제 Love wins all
       </div>
 
-      <div className="text-6xl md:text-8xl font-extrabold text-pink-800 drop-shadow-lg animate-bounce mb-6">
-        {current.name}
-      </div>
+      {showDrumroll && (
+        <div className="absolute inset-0 flex items-center justify-center z-10 bg-gradient-to-br from-pink-200 to-pink-400 animate-pulse">
+          <div className="text-center">
+            <div className="text-8xl md:text-9xl font-black text-pink-900 mb-8 animate-bounce">
+              🥁
+            </div>
+            <div className="text-6xl md:text-8xl font-extrabold text-pink-800 tracking-wider">
+              두구두구두구...
+            </div>
+          </div>
+        </div>
+      )}
 
-      <div className="text-4xl md:text-6xl font-mono text-gray-800 mb-10">
-        {current.student_id}
-      </div>
+      {!showDrumroll && (
+        <div className={`transition-all duration-700 ${revealWinner ? "scale-100 opacity-100" : "scale-50 opacity-0"}`}>
+          <div className="text-6xl md:text-8xl font-extrabold text-pink-800 drop-shadow-lg mb-6 animate-bounce">
+            {current.name}
+          </div>
 
-      <div className="flex gap-6">
+          <div className="text-4xl md:text-6xl font-mono text-gray-800 mb-10">
+            {current.student_id}
+          </div>
+        </div>
+      )}
+
+      <div className="flex gap-6 mt-auto mb-20">
         <Button
           onClick={() => setIsPlaying(!isPlaying)}
           className="px-8 py-6 text-2xl rounded-xl"
           size="lg"
+          disabled={showDrumroll}
         >
           {isPlaying ? "⏸ 일시정지" : "▶ 자동 발표"}
         </Button>
         <Button
-          onClick={() => setIndex((i) => (i + 1) % winners.length)}
+          onClick={handleNext}
           variant="secondary"
           className="px-8 py-6 text-2xl rounded-xl"
           size="lg"
+          disabled={showDrumroll}
         >
           ➡ 다음
         </Button>
