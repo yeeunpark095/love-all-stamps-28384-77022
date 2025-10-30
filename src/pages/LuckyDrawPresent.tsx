@@ -103,12 +103,12 @@ function LuckyDrawPresentContent() {
       )}
 
       {!showDrumroll && (
-        <div className={`transition-all duration-700 ${revealWinner ? "scale-100 opacity-100" : "scale-50 opacity-0"}`}>
+        <div className={`absolute inset-0 flex flex-col items-center justify-center transition-all duration-700 ${revealWinner ? "scale-100 opacity-100" : "scale-50 opacity-0"}`}>
           <div className="text-6xl md:text-8xl font-extrabold text-pink-800 drop-shadow-lg mb-6 animate-bounce">
             {current.name}
           </div>
 
-          <div className="text-4xl md:text-6xl font-mono text-gray-800 mb-10">
+          <div className="text-4xl md:text-6xl font-mono text-gray-800">
             {current.student_id}
           </div>
         </div>
