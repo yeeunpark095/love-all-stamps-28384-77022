@@ -21,6 +21,7 @@ function LuckyDrawPresentContent() {
   const [revealedCount, setRevealedCount] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [showDrumroll, setShowDrumroll] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     (async () => {
@@ -31,10 +32,12 @@ function LuckyDrawPresentContent() {
       if (error) {
         console.error("Error fetching winners:", error);
         alert("당첨자 목록을 불러올 수 없습니다: " + error.message);
+        setIsLoading(false);
         return;
       }
       console.log("Setting winners:", data?.length || 0, "winners");
       setWinners(data || []);
+      setIsLoading(false);
     })();
   }, []);
 
@@ -68,12 +71,21 @@ function LuckyDrawPresentContent() {
     }
   };
 
-  if (!winners.length)
+  if (isLoading) {
+    return (
+      <div className="h-screen flex items-center justify-center text-4xl text-muted-foreground">
+        로딩 중... ⏳
+      </div>
+    );
+  }
+
+  if (!winners.length) {
     return (
       <div className="h-screen flex items-center justify-center text-4xl text-muted-foreground">
         아직 당첨자가 없습니다 🎟
       </div>
     );
+  }
 
   const displayWinners = winners.slice(0, 5);
 
