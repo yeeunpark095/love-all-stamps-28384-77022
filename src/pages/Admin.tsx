@@ -113,31 +113,58 @@ export default function Admin() {
   };
 
   const loadParticipants = async () => {
-    // 모든 프로필과 스탬프 수 가져오기
-    const { data: profiles } = await supabase
-      .from("profiles")
-      .select("id, name, student_id");
+    try {
+      // 모든 프로필과 스탬프 수 가져오기
+      const { data: profiles, error: profileError } = await supabase
+        .from("profiles")
+        .select("id, name, student_id");
 
-    if (!profiles) return;
+      if (profileError) {
+        console.error("Error loading profiles:", profileError);
+        toast({
+          variant: "destructive",
+          title: "오류",
+          description: "참가자 정보를 불러오는데 실패했습니다.",
+        });
+        return;
+      }
 
-    const participantData: Participant[] = [];
-    
-    for (const profile of profiles) {
-      const { count } = await supabase
-        .from("stamp_logs")
-        .select("*", { count: "exact", head: true })
-        .eq("user_id", profile.id);
+      if (!profiles) {
+        setParticipants([]);
+        setTotalParticipants(0);
+        return;
+      }
 
-      participantData.push({
-        id: profile.id,
-        name: profile.name,
-        student_id: profile.student_id,
-        stamp_count: count || 0,
+      const participantData: Participant[] = [];
+      
+      for (const profile of profiles) {
+        const { count, error: stampError } = await supabase
+          .from("stamp_logs")
+          .select("*", { count: "exact", head: true })
+          .eq("user_id", profile.id);
+
+        if (stampError) {
+          console.error("Error loading stamps for user:", profile.id, stampError);
+        }
+
+        participantData.push({
+          id: profile.id,
+          name: profile.name,
+          student_id: profile.student_id,
+          stamp_count: count || 0,
+        });
+      }
+
+      setParticipants(participantData);
+      setTotalParticipants(profiles.length);
+    } catch (error) {
+      console.error("Error in loadParticipants:", error);
+      toast({
+        variant: "destructive",
+        title: "오류",
+        description: "참가자 데이터 로드 중 오류가 발생했습니다.",
       });
     }
-
-    setParticipants(participantData);
-    setTotalParticipants(profiles.length);
   };
 
   const loadBoothStats = async () => {
