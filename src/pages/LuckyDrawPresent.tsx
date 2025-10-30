@@ -114,7 +114,7 @@ function LuckyDrawPresentContent() {
         </div>
       )}
 
-      <div className="flex gap-6 mt-auto mb-20">
+      <div className="flex gap-6 mt-auto mb-20 relative z-20">
         <Button
           onClick={() => setIsPlaying(!isPlaying)}
           className="px-8 py-6 text-2xl rounded-xl"
