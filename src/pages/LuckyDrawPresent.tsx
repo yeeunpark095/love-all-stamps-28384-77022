@@ -25,12 +25,16 @@ function LuckyDrawPresentContent() {
 
   useEffect(() => {
     (async () => {
+      console.log("Fetching winners...");
       const { data, error } = await supabase.rpc("ld_list_winners");
+      console.log("Winners data:", data);
+      console.log("Winners error:", error);
       if (error) {
-        console.error(error);
-        alert("당첨자 목록을 불러올 수 없습니다.");
+        console.error("Error fetching winners:", error);
+        alert("당첨자 목록을 불러올 수 없습니다: " + error.message);
         return;
       }
+      console.log("Setting winners:", data?.length || 0, "winners");
       setWinners(data || []);
     })();
   }, []);
