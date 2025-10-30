@@ -18,10 +18,9 @@ export default function LuckyDrawPresent() {
 
 function LuckyDrawPresentContent() {
   const [winners, setWinners] = useState<Winner[]>([]);
-  const [index, setIndex] = useState(0);
+  const [revealedCount, setRevealedCount] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [showDrumroll, setShowDrumroll] = useState(true);
-  const [revealWinner, setRevealWinner] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -40,32 +39,32 @@ function LuckyDrawPresentContent() {
   }, []);
 
   useEffect(() => {
-    if (!isPlaying || winners.length === 0) return;
+    if (!isPlaying || winners.length === 0 || revealedCount >= Math.min(5, winners.length)) return;
     const timer = setInterval(() => {
       if (showDrumroll) {
         // 드럼롤 중이면 당첨자 공개
         setShowDrumroll(false);
-        setRevealWinner(true);
+        setRevealedCount(prev => prev + 1);
       } else {
         // 당첨자 공개 중이면 다음 당첨자 드럼롤
-        setIndex((i) => (i + 1) % winners.length);
-        setShowDrumroll(true);
-        setRevealWinner(false);
+        if (revealedCount < Math.min(5, winners.length)) {
+          setShowDrumroll(true);
+        }
       }
     }, 3000);
     return () => clearInterval(timer);
-  }, [isPlaying, winners, showDrumroll]);
+  }, [isPlaying, winners, showDrumroll, revealedCount]);
 
   const handleNext = () => {
     if (showDrumroll) {
       // 드럼롤 상태에서 다음 버튼 클릭 -> 당첨자 공개
       setShowDrumroll(false);
-      setRevealWinner(true);
+      setRevealedCount(prev => prev + 1);
     } else {
       // 당첨자 공개 상태에서 다음 버튼 클릭 -> 다음 당첨자 드럼롤
-      setIndex((i) => (i + 1) % winners.length);
-      setShowDrumroll(true);
-      setRevealWinner(false);
+      if (revealedCount < Math.min(5, winners.length)) {
+        setShowDrumroll(true);
+      }
     }
   };
 
@@ -76,7 +75,7 @@ function LuckyDrawPresentContent() {
       </div>
     );
 
-  const current = winners[index];
+  const displayWinners = winners.slice(0, 5);
 
   return (
     <div
@@ -102,17 +101,27 @@ function LuckyDrawPresentContent() {
         </div>
       )}
 
-      {!showDrumroll && (
-        <div className={`absolute inset-0 flex flex-col items-center justify-center transition-all duration-700 ${revealWinner ? "scale-100 opacity-100" : "scale-50 opacity-0"}`}>
-          <div className="text-6xl md:text-8xl font-extrabold text-pink-800 drop-shadow-lg mb-6 animate-bounce">
-            {current.name}
-          </div>
-
-          <div className="text-4xl md:text-6xl font-mono text-gray-800">
-            {current.student_id}
-          </div>
+      <div className="absolute inset-0 flex items-center justify-center p-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl w-full">
+          {displayWinners.map((winner, idx) => (
+            <div
+              key={idx}
+              className={`bg-white/90 backdrop-blur-sm rounded-2xl p-8 shadow-2xl transition-all duration-700 ${
+                idx < revealedCount && !showDrumroll
+                  ? "scale-100 opacity-100"
+                  : "scale-50 opacity-0"
+              }`}
+            >
+              <div className="text-4xl md:text-5xl font-extrabold text-pink-800 mb-4 text-center animate-bounce">
+                {winner.name}
+              </div>
+              <div className="text-2xl md:text-3xl font-mono text-gray-700 text-center">
+                {winner.student_id}
+              </div>
+            </div>
+          ))}
         </div>
-      )}
+      </div>
 
       <div className="flex gap-6 mt-auto mb-20 relative z-20">
         <Button
@@ -127,13 +136,14 @@ function LuckyDrawPresentContent() {
           variant="secondary"
           className="px-8 py-6 text-2xl rounded-xl"
           size="lg"
+          disabled={revealedCount >= Math.min(5, winners.length) && !showDrumroll}
         >
           ➡ {showDrumroll ? "공개" : "다음"}
         </Button>
       </div>
 
       <div className="absolute bottom-5 right-5 text-sm text-gray-600">
-        총 {winners.length}명 | {index + 1}/{winners.length}
+        총 {winners.length}명 | {revealedCount}/{Math.min(5, winners.length)} 공개
       </div>
     </div>
   );
