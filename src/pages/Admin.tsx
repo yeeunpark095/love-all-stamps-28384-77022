@@ -104,6 +104,8 @@ export default function Admin() {
       supabase.rpc("ld_list_eligible"),
       supabase.rpc("ld_list_winners"),
     ]);
+    console.log("Eligible count:", elig?.length || 0);
+    console.log("Winners count:", win?.length || 0);
     setEligible(elig || []);
     setWinners(win || []);
     setSample([]);
@@ -188,6 +190,7 @@ export default function Admin() {
   }, []);
 
   const pickRandom = async () => {
+    console.log("Pick random clicked. Count:", count, "Eligible:", eligibleCount);
     const { data, error } = await supabase.rpc("ld_pick_random", { n: count });
     if (error) {
       toast({
@@ -195,9 +198,10 @@ export default function Admin() {
         title: "오류",
         description: "무작위 선택 실패",
       });
-      console.error(error);
+      console.error("Pick random error:", error);
       return;
     }
+    console.log("Pick random result:", data);
     setSample(data || []);
     toast({
       title: "임시 선택 완료",
