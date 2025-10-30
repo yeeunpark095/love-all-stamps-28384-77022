@@ -94,7 +94,8 @@ export default function Performances() {
                 }`}
                 style={{ animationDelay: `${index * 0.02}s` }}
               >
-                <div className="flex items-center gap-0">
+                {/* Desktop Layout */}
+                <div className="hidden md:flex items-center gap-0">
                   {/* 순서 번호 */}
                   <div
                     className={`flex-shrink-0 w-20 h-full flex flex-col items-center justify-center py-4 ${
@@ -145,6 +146,51 @@ export default function Performances() {
                         {perf.genre}
                       </Badge>
                     </div>
+                  </div>
+                </div>
+
+                {/* Mobile Layout */}
+                <div className="md:hidden p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <div
+                        className={`flex items-center justify-center w-10 h-10 rounded-full text-sm font-bold ${
+                          isCurrent
+                            ? "bg-gradient-to-br from-primary to-secondary text-white"
+                            : "bg-muted/50 text-muted-foreground"
+                        }`}
+                      >
+                        {perf.order_num}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Clock className={`w-3 h-3 ${isCurrent ? "text-primary" : "text-muted-foreground"}`} />
+                        <span className={`text-sm font-bold ${isCurrent ? "text-primary" : ""}`}>
+                          {perf.time}
+                        </span>
+                      </div>
+                    </div>
+                    <Badge 
+                      variant="outline" 
+                      className={`${genreColor} border text-xs`}
+                    >
+                      <GenreIcon className="w-3 h-3 mr-1" />
+                      {perf.genre}
+                    </Badge>
+                  </div>
+                  
+                  {isCurrent && (
+                    <Badge variant="default" className="mb-2 animate-heart-pulse text-xs">
+                      <Sparkles className="w-3 h-3 mr-1" />
+                      현재 진행중
+                    </Badge>
+                  )}
+                  
+                  <h3 className="font-bold text-base mb-1 leading-tight">
+                    {perf.content}
+                  </h3>
+                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <Users className="w-3 h-3 flex-shrink-0" />
+                    <span>{perf.team}</span>
                   </div>
                 </div>
               </Card>
