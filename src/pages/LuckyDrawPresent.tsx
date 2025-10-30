@@ -122,7 +122,7 @@ function LuckyDrawPresentContent() {
                   : "scale-50 opacity-0"
               }`}
             >
-              <div className="text-4xl md:text-5xl font-extrabold text-pink-800 mb-4 text-center animate-bounce">
+              <div className="text-6xl md:text-8xl font-extrabold text-pink-800 mb-4 text-center animate-bounce">
                 {winner.name}
               </div>
               <div className="text-2xl md:text-3xl font-mono text-gray-700 text-center">
