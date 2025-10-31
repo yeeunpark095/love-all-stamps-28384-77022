@@ -30,8 +30,8 @@ export default function Performances() {
   }, [navigate]);
 
   const getCurrentPerformance = () => {
-    // 9번 순서 공연(1학년 여자댄스)을 현재 진행중으로 고정
-    const currentPerf = performances.find(p => p.order_num === 9);
+    // 10번 순서 공연을 현재 진행중으로 고정
+    const currentPerf = performances.find(p => p.order_num === 10);
     return currentPerf?.performance_id || null;
   };
 
