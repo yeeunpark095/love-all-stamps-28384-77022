@@ -263,6 +263,27 @@ export default function Admin() {
     });
   };
 
+  const drawWinners3Plus = async () => {
+    setLoading(true);
+    const { error } = await supabase.rpc("ld_draw_winners");
+    if (error) {
+      toast({
+        variant: "destructive",
+        title: "오류",
+        description: "추첨에 실패했습니다: " + error.message,
+      });
+      console.error(error);
+      setLoading(false);
+      return;
+    }
+    await loadLuckyDraw();
+    setLoading(false);
+    toast({
+      title: "🎉 추첨 완료!",
+      description: "추첨권 3개 이상인 사람 중 5명이 자동으로 선택되었습니다.",
+    });
+  };
+
   const unsetWinner = async (id: string) => {
     const { error } = await supabase.rpc("ld_unset_winner", { p_id: id });
     if (error) {
@@ -1131,21 +1152,32 @@ export default function Admin() {
                     />
                     <span className="text-sm text-muted-foreground">명</span>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex flex-col gap-2">
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={pickRandom}
+                        disabled={eligibleCount === 0 || loading}
+                        size="sm"
+                      >
+                        🎲 무작위 선택
+                      </Button>
+                      <Button
+                        onClick={confirmWinners}
+                        variant="secondary"
+                        disabled={sample.length === 0 || loading}
+                        size="sm"
+                      >
+                        ✅ 당첨 확정
+                      </Button>
+                    </div>
                     <Button
-                      onClick={pickRandom}
-                      disabled={eligibleCount === 0 || loading}
+                      onClick={drawWinners3Plus}
+                      disabled={loading}
+                      variant="default"
                       size="sm"
+                      className="w-full"
                     >
-                      🎲 무작위 선택
-                    </Button>
-                    <Button
-                      onClick={confirmWinners}
-                      variant="secondary"
-                      disabled={sample.length === 0 || loading}
-                      size="sm"
-                    >
-                      ✅ 당첨 확정
+                      🎟️ 추첨권 3개 이상 중 5명 자동 추첨
                     </Button>
                   </div>
                   {sample.length > 0 && (
