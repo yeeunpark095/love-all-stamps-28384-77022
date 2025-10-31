@@ -30,9 +30,34 @@ export default function Performances() {
   }, [navigate]);
 
   const getCurrentPerformance = () => {
-    // 10번 순서 공연을 현재 진행중으로 고정
-    const currentPerf = performances.find(p => p.order_num === 10);
-    return currentPerf?.performance_id || null;
+    const now = new Date();
+    const currentTime = now.getHours() * 60 + now.getMinutes(); // 현재 시간을 분 단위로 변환
+    
+    // 각 공연의 시작 시간과 다음 공연 시작 시간 사이에 현재 시간이 있는지 확인
+    for (let i = 0; i < performances.length; i++) {
+      const perf = performances[i];
+      const [hours, minutes] = perf.time.split(':').map(Number);
+      const perfTime = hours * 60 + minutes;
+      
+      // 마지막 공연인 경우
+      if (i === performances.length - 1) {
+        if (currentTime >= perfTime) {
+          return perf.performance_id;
+        }
+      } else {
+        // 다음 공연 시간 가져오기
+        const nextPerf = performances[i + 1];
+        const [nextHours, nextMinutes] = nextPerf.time.split(':').map(Number);
+        const nextPerfTime = nextHours * 60 + nextMinutes;
+        
+        // 현재 공연 시작 시간 <= 현재 시간 < 다음 공연 시작 시간
+        if (currentTime >= perfTime && currentTime < nextPerfTime) {
+          return perf.performance_id;
+        }
+      }
+    }
+    
+    return null;
   };
 
   const getGenreIcon = (genre: string) => {
