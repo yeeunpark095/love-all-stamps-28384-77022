@@ -308,6 +308,7 @@ export type Database = {
       }
       ld_confirm_winners: { Args: { p_ids: string[] }; Returns: undefined }
       ld_draw_winners: { Args: never; Returns: undefined }
+      ld_draw_winners_2plus: { Args: never; Returns: undefined }
       ld_list_eligible: {
         Args: never
         Returns: {

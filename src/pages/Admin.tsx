@@ -284,6 +284,27 @@ export default function Admin() {
     });
   };
 
+  const drawWinners2Plus = async () => {
+    setLoading(true);
+    const { error } = await supabase.rpc("ld_draw_winners_2plus");
+    if (error) {
+      toast({
+        variant: "destructive",
+        title: "오류",
+        description: "추첨에 실패했습니다: " + error.message,
+      });
+      console.error(error);
+      setLoading(false);
+      return;
+    }
+    await loadLuckyDraw();
+    setLoading(false);
+    toast({
+      title: "🎉 추첨 완료!",
+      description: "추첨권 2개 이상인 사람 중 5명이 자동으로 선택되었습니다.",
+    });
+  };
+
   const unsetWinner = async (id: string) => {
     const { error } = await supabase.rpc("ld_unset_winner", { p_id: id });
     if (error) {
@@ -419,6 +440,35 @@ export default function Admin() {
     toast({
       title: "CSV 내보내기 완료",
       description: `추첨권 3개 참가자 ${ticket3Participants.length}명이 다운로드되었습니다.`,
+    });
+  };
+
+  const exportTicket2PlusCSV = () => {
+    const ticket2PlusParticipants = participants.filter(
+      p => p.stamp_count >= 10
+    );
+    const ticketCount = (stampCount: number) => 
+      stampCount >= 20 ? 5 :
+      stampCount >= 15 ? 3 :
+      stampCount >= 10 ? 2 : 0;
+    
+    const header = ["이름", "학번", "스탬프 개수", "추첨권"];
+    const csv =
+      header.join(",") +
+      "\n" +
+      ticket2PlusParticipants
+        .map((p) => [p.name, p.student_id, p.stamp_count, ticketCount(p.stamp_count)].join(","))
+        .join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "ticket_2plus_participants.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+    toast({
+      title: "CSV 내보내기 완료",
+      description: `추첨권 2개 이상 참가자 ${ticket2PlusParticipants.length}명이 다운로드되었습니다.`,
     });
   };
 
@@ -627,6 +677,9 @@ export default function Admin() {
   const topBooths = boothStats.slice(0, 3);
   const ticket3Participants = participants.filter(
     p => p.stamp_count >= 15 && p.stamp_count < 20
+  );
+  const ticket2PlusParticipants = participants.filter(
+    p => p.stamp_count >= 10
   );
 
   const filteredParticipants = participants.filter(
@@ -1206,6 +1259,15 @@ export default function Admin() {
                     >
                       🎟️ 추첨권 3개 이상 중 5명 자동 추첨
                     </Button>
+                    <Button
+                      onClick={drawWinners2Plus}
+                      disabled={loading}
+                      variant="outline"
+                      size="sm"
+                      className="w-full"
+                    >
+                      🎟️ 추첨권 2개 이상 중 5명 자동 추첨
+                    </Button>
                   </div>
                   {sample.length > 0 && (
                     <p className="text-xs text-muted-foreground">
@@ -1249,6 +1311,73 @@ export default function Admin() {
                 </CardContent>
               </Card>
             )}
+
+            {/* Ticket 2+ List */}
+            <Card>
+              <CardHeader>
+                <CardTitle>추첨권 2개 이상 참가자</CardTitle>
+                <CardDescription>
+                  스탬프 10개 이상 - 총 {ticket2PlusParticipants.length}명
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="mb-4">
+                  <Button
+                    onClick={exportTicket2PlusCSV}
+                    variant="outline"
+                    size="sm"
+                    disabled={ticket2PlusParticipants.length === 0}
+                  >
+                    <Download className="w-4 h-4 mr-2" />
+                    CSV 다운로드
+                  </Button>
+                </div>
+                <div className="border rounded-lg overflow-hidden max-h-96 overflow-y-auto">
+                  <table className="w-full">
+                    <thead className="bg-muted sticky top-0">
+                      <tr>
+                        <th className="px-4 py-2 text-left">이름</th>
+                        <th className="px-4 py-2 text-left">학번</th>
+                        <th className="px-4 py-2 text-center">스탬프</th>
+                        <th className="px-4 py-2 text-center">추첨권</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {ticket2PlusParticipants.map((p) => {
+                        const ticketCount = 
+                          p.stamp_count >= 20 ? 5 :
+                          p.stamp_count >= 15 ? 3 :
+                          p.stamp_count >= 10 ? 2 : 0;
+                        
+                        return (
+                          <tr key={p.id} className="border-t">
+                            <td className="px-4 py-2">{p.name}</td>
+                            <td className="px-4 py-2 font-mono">{p.student_id}</td>
+                            <td className="px-4 py-2 text-center">{p.stamp_count}</td>
+                            <td className="px-4 py-2 text-center">
+                              <span className={`text-lg font-bold ${
+                                ticketCount === 5 ? 'text-primary' :
+                                ticketCount === 3 ? 'text-accent' :
+                                'text-secondary'
+                              }`}>
+                                🎟️ {ticketCount}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                      {ticket2PlusParticipants.length === 0 && (
+                        <tr>
+                          <td colSpan={4} className="px-4 py-6 text-center text-muted-foreground">
+                            추첨권 2개 이상인 참가자가 없습니다.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </CardContent>
+            </Card>
 
             {/* Ticket 3 List */}
             <Card>
