@@ -30,18 +30,9 @@ export default function Performances() {
   }, [navigate]);
 
   const getCurrentPerformance = () => {
-    const now = new Date();
-    const currentTime = `${now.getHours().toString().padStart(2, "0")}:${now.getMinutes().toString().padStart(2, "0")}`;
-    
-    for (let i = 0; i < performances.length; i++) {
-      const perf = performances[i];
-      const nextPerf = performances[i + 1];
-      
-      if (currentTime >= perf.time && (!nextPerf || currentTime < nextPerf.time)) {
-        return perf.performance_id;
-      }
-    }
-    return null;
+    // 9번 순서 공연(1학년 여자댄스)을 현재 진행중으로 고정
+    const currentPerf = performances.find(p => p.order_num === 9);
+    return currentPerf?.performance_id || null;
   };
 
   const getGenreIcon = (genre: string) => {
