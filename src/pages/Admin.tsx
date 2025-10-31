@@ -398,6 +398,30 @@ export default function Admin() {
     });
   };
 
+  const exportTicket3CSV = () => {
+    const ticket3Participants = participants.filter(
+      p => p.stamp_count >= 15 && p.stamp_count < 20
+    );
+    const header = ["이름", "학번", "스탬프 개수", "추첨권"];
+    const csv =
+      header.join(",") +
+      "\n" +
+      ticket3Participants
+        .map((p) => [p.name, p.student_id, p.stamp_count, 3].join(","))
+        .join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "ticket_3_participants.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+    toast({
+      title: "CSV 내보내기 완료",
+      description: `추첨권 3개 참가자 ${ticket3Participants.length}명이 다운로드되었습니다.`,
+    });
+  };
+
   const togglePinVisibility = (boothId: number) => {
     setVisiblePins((prev) => {
       const newSet = new Set(prev);
@@ -601,6 +625,9 @@ export default function Admin() {
   const winnerCount = winners.length;
   const completedCount = participants.filter((p) => p.stamp_count >= 20).length;
   const topBooths = boothStats.slice(0, 3);
+  const ticket3Participants = participants.filter(
+    p => p.stamp_count >= 15 && p.stamp_count < 20
+  );
 
   const filteredParticipants = participants.filter(
     (p) =>
@@ -1222,6 +1249,60 @@ export default function Admin() {
                 </CardContent>
               </Card>
             )}
+
+            {/* Ticket 3 List */}
+            <Card>
+              <CardHeader>
+                <CardTitle>추첨권 3개 참가자</CardTitle>
+                <CardDescription>
+                  스탬프 15~19개 (추첨권 3개) - 총 {ticket3Participants.length}명
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="mb-4">
+                  <Button
+                    onClick={exportTicket3CSV}
+                    variant="outline"
+                    size="sm"
+                    disabled={ticket3Participants.length === 0}
+                  >
+                    <Download className="w-4 h-4 mr-2" />
+                    CSV 다운로드
+                  </Button>
+                </div>
+                <div className="border rounded-lg overflow-hidden max-h-96 overflow-y-auto">
+                  <table className="w-full">
+                    <thead className="bg-muted sticky top-0">
+                      <tr>
+                        <th className="px-4 py-2 text-left">이름</th>
+                        <th className="px-4 py-2 text-left">학번</th>
+                        <th className="px-4 py-2 text-center">스탬프</th>
+                        <th className="px-4 py-2 text-center">추첨권</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {ticket3Participants.map((p) => (
+                        <tr key={p.id} className="border-t">
+                          <td className="px-4 py-2">{p.name}</td>
+                          <td className="px-4 py-2 font-mono">{p.student_id}</td>
+                          <td className="px-4 py-2 text-center">{p.stamp_count}</td>
+                          <td className="px-4 py-2 text-center">
+                            <span className="text-lg font-bold text-accent">🎟️ 3</span>
+                          </td>
+                        </tr>
+                      ))}
+                      {ticket3Participants.length === 0 && (
+                        <tr>
+                          <td colSpan={4} className="px-4 py-6 text-center text-muted-foreground">
+                            추첨권 3개인 참가자가 없습니다.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </CardContent>
+            </Card>
 
             {/* Winners List */}
             <Card>
